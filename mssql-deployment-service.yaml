@@ -1,0 +1,80 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: mssql-deployment
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mssql
+    spec:
+      containers:
+       - name: mssql
+         image: microsoft/mssql-server-linux
+         ports:
+          - name: mssql-port
+            containerPort: 1433
+         env:
+         - name: ACCEPT_EULA
+           value: "Y"
+         - name: SA_PASSWORD
+           valueFrom:
+            secretKeyRef:
+              name: mssql
+              key: SA_PASSWORD
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mssql-service
+spec:
+  selector:
+    app: mssql
+  ports:
+    - protocol: TCP
+      port: 1433
+      targetPort: 1433
+  type: LoadBalancer
+
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: jenkins-deployment
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: jenkins
+    spec:
+      containers:
+        - name: jenkins
+          image: gabrielrojas/jenkinssummit
+          ports:
+            - name: http-port
+              containerPort: 8080
+            - name: jnlp-port
+              containerPort: 31000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins-service
+spec:
+  selector:
+    app: jenkins
+  ports:
+    - name: jenkins-8080
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+    - name: jenkins-31000
+      protocol: TCP
+      port: 31000
+      targetPort: 31000
+  type: LoadBalancer
